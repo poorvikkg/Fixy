@@ -7,6 +7,20 @@ class InputModel {
     this.readWriteRatio = data.readWriteRatio || "balanced";
     this.region = data.region || "local";
     this.availability = data.availability || "medium";
+    
+    // Advanced fields
+    this.cloudProvider = data.cloudProvider || "aws";
+    this.compliance = data.compliance || "none";
+    this.consistency = data.consistency || "eventual";
+    this.latency = data.latency || "standard";
+    this.budget = data.budget || "medium";
+
+    // Staff/Principal Engineer (FAANG) fields
+    this.drStrategy = data.drStrategy || "single-region";
+    this.observability = data.observability || "basic";
+    this.resiliency = data.resiliency || "standard";
+    this.apiProtocol = data.apiProtocol || "rest";
+    this.dataArchitecture = data.dataArchitecture || "crud";
   }
 
   validate() {

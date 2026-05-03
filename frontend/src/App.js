@@ -1,45 +1,80 @@
-import React, { useEffect, useState } from "react";
-import Graph3D from "./components/Graph3D";
+import React, { useState } from "react";
+import BuildMode from "./components/BuildMode";
+import ImproveMode from "./components/ImproveMode";
+import "./index.css";
 
-function App() {
-  const [data, setData] = useState(null);
+export default function App() {
+  const [mode, setMode] = useState(null); // null = landing, "build" | "improve"
 
-  useEffect(() => {
-    fetch("http://localhost:3000/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        appType: "social",
-        users: 2000000,
-        features: ["chat", "media", "feed"],
-        realTime: true,
-        readWriteRatio: "read-heavy",
-        region: "global",
-        availability: "high"
-      })
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        setData({
-          graph: res.raw.architecture,
-          services: res.raw.serviceExpansion.services
-        });
-      });
-  }, []);
+  if (!mode) {
+    return (
+      <div className="landing">
+        <div className="brand">
+          <div className="brand-eyebrow">
+            <div className="brand-eyebrow-dot" />
+            AI-Powered System Design
+          </div>
+          <div className="brand-logo">FIXY</div>
+          <p className="brand-tagline">
+            Production-grade architecture engine for engineers and businesses.
+            Design systems the way Staff Engineers at FAANG do.
+          </p>
+        </div>
 
-  return (
-    <div>
-      <h1>Fixy - System Design Visualizer</h1>
+        <div className="mode-cards">
+          {/* BUILD FROM SCRATCH */}
+          <div className="mode-card build" onClick={() => setMode("build")}>
+            <div className="mode-icon-wrapper">🏗️</div>
+            <div>
+              <div className="mode-subtitle">Mode 01</div>
+              <div className="mode-title">Build from Scratch</div>
+            </div>
+            <p className="mode-desc">
+              Starting a new product? Describe your requirements and Fixy
+              generates a complete, production-ready HLD + LLD — the way
+              a Staff Engineer at Google or Meta would design it.
+            </p>
+            <div className="mode-pills">
+              {["HLD Diagram","LLD Components","Data Models","Scaling","API Design","Queue Design"].map(p => (
+                <span className="pill" key={p}>{p}</span>
+              ))}
+            </div>
+            <div className="mode-cta">
+              Start Building
+              <div className="mode-cta-arrow">→</div>
+            </div>
+          </div>
 
-      {data ? (
-        <Graph3D data={data} />
-      ) : (
-        <p>Loading...</p>
-      )}
-    </div>
-  );
+          {/* IMPROVE EXISTING */}
+          <div className="mode-card improve" onClick={() => setMode("improve")}>
+            <div className="mode-icon-wrapper">🔧</div>
+            <div>
+              <div className="mode-subtitle">Mode 02</div>
+              <div className="mode-title">Improve Existing</div>
+            </div>
+            <p className="mode-desc">
+              Already running a system but facing bottlenecks? Describe your
+              current architecture and get a full audit with concrete,
+              actionable improvement recommendations.
+            </p>
+            <div className="mode-pills">
+              {["SPOF Detection","Bottleneck Audit","Scale Gaps","DB Review","Resiliency","Cost Savings"].map(p => (
+                <span className="pill" key={p}>{p}</span>
+              ))}
+            </div>
+            <div className="mode-cta">
+              Start Improving
+              <div className="mode-cta-arrow">→</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "build") {
+    return <BuildMode onBack={() => setMode(null)} />;
+  }
+
+  return <ImproveMode onBack={() => setMode(null)} />;
 }
-
-export default App;

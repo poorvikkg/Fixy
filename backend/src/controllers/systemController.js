@@ -2,6 +2,10 @@ const { processInput } = require("../services/interpreterService");
 const { buildDecision } = require("../engine/decisionEngine");
 const { generateArchitecture } = require("../services/architectureService");
 const { generatePipelines } = require("../services/pipelineService");
+const { generateServiceExpansion } = require("../services/serviceExpansionService");
+const { generateDataModels } = require("../services/dataModelService");
+const { generateSystemInsights } = require("../services/scalingService");
+const { formatOutput } = require("../services/outputFormatter");
 
 function generateSystem(req, res) {
   try {
@@ -17,16 +21,30 @@ function generateSystem(req, res) {
     const decisions = buildDecision(result.flags);
 
     const architecture = generateArchitecture(decisions);
-
-    // NEW STEP
     const pipelines = generatePipelines(decisions);
+    const serviceExpansion = generateServiceExpansion(decisions, result.flags);
+    const dataModels = generateDataModels(decisions);
+    const insights = generateSystemInsights(decisions, result.flags);
+
+    // FINAL STEP
+    const explanation = formatOutput(
+      req.body,
+      decisions,
+      pipelines,
+      insights
+    );
 
     return res.json({
       status: "success",
-      flags: result.flags,
-      decisions,
-      architecture,
-      pipelines
+      raw: {
+        decisions,
+        architecture,
+        pipelines,
+        serviceExpansion,
+        dataModels,
+        insights
+      },
+      explanation
     });
 
   } catch (error) {

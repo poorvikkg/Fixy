@@ -23,7 +23,25 @@ function interpret(input) {
     // type-based flags
     isSocialApp: input.appType === "social",
     isEcommerce: input.appType === "ecommerce",
-    isStreamingApp: input.appType === "streaming"
+    isStreamingApp: input.appType === "streaming",
+
+    // advanced config
+    provider: input.cloudProvider,
+    requiresCompliance: input.compliance !== "none",
+    complianceType: input.compliance,
+    isStrongConsistency: input.consistency === "strong",
+    requiresLowLatency: input.latency === "low",
+    isLowBudget: input.budget === "low",
+
+    // FAANG level flags
+    isActiveActive: input.drStrategy === "active-active",
+    needsDistributedTracing: input.observability === "distributed",
+    needsChaosEngineering: input.resiliency === "chaos",
+    needsCircuitBreaker: input.resiliency === "circuit-breaker" || input.resiliency === "chaos",
+    useGrpc: input.apiProtocol === "grpc",
+    useGraphql: input.apiProtocol === "graphql",
+    isEventSourced: input.dataArchitecture === "event-sourcing",
+    isCqrs: input.dataArchitecture === "cqrs" || input.dataArchitecture === "event-sourcing"
   };
 
   return flags;

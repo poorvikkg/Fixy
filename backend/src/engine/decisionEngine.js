@@ -6,10 +6,25 @@
 function decideInfrastructure(flags) {
   const infra = [];
 
-  infra.push("api_gateway");
+  if (flags.requiresCompliance) {
+    infra.push("waf_security_layer");
+  }
 
-  if (flags.isGlobal || flags.needsMedia) {
+  if (flags.useGrpc) {
+    infra.push("gRPC_API_Gateway");
+  } else if (flags.useGraphql) {
+    infra.push("Apollo_Federation_Gateway");
+  } else {
+    infra.push("REST_API_Gateway");
+  }
+
+  if (flags.needsCircuitBreaker) {
+    infra.push("Service_Mesh_Istio");
+  }
+
+  if (flags.isGlobal || flags.needsMedia || flags.requiresLowLatency) {
     infra.push("cdn");
+    if (flags.requiresLowLatency) infra.push("edge_compute");
   }
 
   if (flags.isMediumScale || flags.isLargeScale) {
@@ -30,6 +45,10 @@ function decideServices(flags) {
 
   services.push("auth_service", "user_service");
 
+  if (flags.requiresCompliance) services.push("audit_logging_service");
+  if (flags.needsDistributedTracing) services.push("OpenTelemetry_Collector");
+  if (flags.needsChaosEngineering) services.push("Chaos_Mesh_Agent");
+  
   if (flags.needsFeed) services.push("feed_service");
   if (flags.needsChat) services.push("chat_service");
   if (flags.needsMedia) services.push("media_service");
@@ -43,22 +62,35 @@ function decideServices(flags) {
 function decideDataLayer(flags) {
   const data = [];
 
-  if (flags.isSocialApp || flags.needsChat) {
+  if (flags.isCqrs) {
+    data.push("Write_Model_DB");
+    data.push("Read_Model_DB");
+  } else if (flags.isStrongConsistency) {
+    data.push(flags.isGlobal ? "NewSQL_Distributed_DB" : "SQL_DB_Strict");
+  } else if (flags.isSocialApp || flags.needsChat) {
     data.push("NoSQL_DB");
   } else {
     data.push("SQL_DB");
   }
 
-  if (flags.isReadHeavy) {
-    data.push("cache");
+  if (flags.isActiveActive) {
+    data.push("Cross_Region_Active_Replication");
+  }
+
+  if (flags.isReadHeavy || flags.requiresLowLatency) {
+    data.push(flags.requiresLowLatency ? "Redis_Cluster_Ultra_Fast" : "cache");
   }
 
   if (flags.isMediumScale || flags.isLargeScale) {
-    data.push("read_replica");
+    if (!flags.isStrongConsistency) data.push("read_replica");
   }
 
-  if (flags.isLargeScale) {
+  if (flags.isLargeScale && !flags.isStrongConsistency) {
     data.push("sharding");
+  }
+  
+  if (flags.requiresCompliance) {
+    data.push("KMS_Encryption_Service");
   }
 
   return data;
@@ -69,8 +101,14 @@ function decideDataLayer(flags) {
 function decideAsyncLayer(flags) {
   const asyncLayer = [];
 
+  if (flags.isEventSourced) {
+    asyncLayer.push("Event_Store_Kafka");
+  } else if (flags.isLargeScale || flags.needsChat || flags.needsMedia) {
+    asyncLayer.push("message_queue");
+  }
+  
   if (flags.isLargeScale || flags.needsChat || flags.needsMedia) {
-    asyncLayer.push("message_queue", "worker_services");
+    asyncLayer.push("worker_services");
   }
 
   if (flags.isLargeScale && flags.needsFeed) {
