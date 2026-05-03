@@ -1,0 +1,20 @@
+{
+  "name": "social-media-backend",
+  "version": "1.0.0",
+  "description": "High-scale 1M DAU social media architecture",
+  "main": "apiGateway.js",
+  "scripts": {
+    "start": "node apiGateway.js"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1580.0",
+    "bcrypt": "^5.1.1",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
+    "http-proxy-middleware": "^3.0.0",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
+    "socket.io": "^4.7.5"
+  }
+}

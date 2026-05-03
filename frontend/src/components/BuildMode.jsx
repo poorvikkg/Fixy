@@ -1,10 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ArchitectureDiagram from "./ArchitectureDiagram";
+import mermaid from "mermaid";
+
+mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+
+const MermaidChart = ({ chart }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && chart) {
+      mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, chart)
+        .then(({ svg }) => {
+          ref.current.innerHTML = svg;
+        }).catch(e => {
+          ref.current.innerHTML = `<pre style="color:red;font-size:0.8rem">${e.message}</pre>`;
+        });
+    }
+  }, [chart]);
+  return <div ref={ref} className="mermaid-container" style={{ background:"#111827", padding:"1rem", borderRadius:"8px", border:"1px solid #374151", overflowX:"auto" }} />;
+};
 
 const FEATURES = ["chat","media","feed","notifications","search","payments","auth","analytics"];
 
 export default function BuildMode({ onBack }) {
   const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedSvc, setSelectedSvc] = useState(null);
   const [lldData, setLldData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("hld");
@@ -25,6 +44,7 @@ export default function BuildMode({ onBack }) {
     setSelectedNode(nodeData);
     if(result){
       const svc = result.raw.serviceExpansion.services.find(s=>s.service===nodeId);
+      setSelectedSvc(svc || null);
       setLldData(svc ? svc.layers : null);
     }
   };
@@ -227,12 +247,56 @@ export default function BuildMode({ onBack }) {
                     <button className="lld-close" onClick={()=>setSelectedNode(null)}>×</button>
                   </div>
                   <span className="layer-tag">{selectedNode.layer}</span>
+                  
+                  {selectedSvc?.designPatterns && selectedSvc.designPatterns.length > 0 && (
+                    <div style={{marginTop:"1.5rem"}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:"#10b981",marginBottom:"0.6rem"}}>Recommended Patterns</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:"0.5rem"}}>
+                        {selectedSvc.designPatterns.map((p,i) => (
+                          <span key={i} style={{background:"rgba(16,185,129,0.1)",color:"#34d399",border:"1px solid rgba(16,185,129,0.3)",padding:"4px 8px",borderRadius:"6px",fontSize:"0.75rem",fontWeight:600}}>{p}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {lldData ? Object.entries(lldData).map(([ln,items])=>(
                     <div key={ln} style={{marginTop:"1rem"}}>
                       <div style={{fontSize:"0.72rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:"#6b7280",marginBottom:"0.4rem"}}>{ln}</div>
                       <ul>{items.map((item,i)=><li key={i}>{item}</li>)}</ul>
                     </div>
                   )) : <p style={{marginTop:"1rem",fontSize:"0.88rem",color:"#9ca3af"}}>Infrastructure component. Click a service node for LLD.</p>}
+                  
+                  {selectedSvc?.classDiagram && (
+                    <div style={{marginTop:"1.5rem"}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:"#8b5cf6",marginBottom:"0.6rem"}}>Class Diagram</div>
+                      <MermaidChart chart={selectedSvc.classDiagram} />
+                    </div>
+                  )}
+                  {selectedSvc?.codeScaffold && (
+                    <div style={{marginTop:"1.5rem"}}>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:"#3b82f6",marginBottom:"0.6rem"}}>Code Scaffold</div>
+                      <pre style={{
+                        background:"#111827", color:"#e5e7eb", padding:"1rem",
+                        borderRadius:"8px", fontSize:"0.75rem", fontFamily:"'JetBrains Mono', monospace",
+                        overflowX:"auto", border:"1px solid #374151"
+                      }}>
+                        <code>{selectedSvc.codeScaffold}</code>
+                      </pre>
+                      <button style={{
+                        marginTop:"0.75rem", width:"100%", padding:"0.6rem", background:"rgba(59,130,246,0.1)",
+                        color:"#60a5fa", border:"1px solid rgba(59,130,246,0.3)", borderRadius:"6px", cursor:"pointer",
+                        fontWeight:600, fontSize:"0.8rem", transition:"all 0.2s"
+                      }} onClick={() => {
+                        const blob = new Blob([selectedSvc.codeScaffold], { type: "text/javascript" });
+                        const link = document.createElement("a");
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `${selectedSvc.service}.js`;
+                        link.click();
+                      }}>
+                        ↓ Download Scaffold
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </>
@@ -246,6 +310,22 @@ export default function BuildMode({ onBack }) {
                   <div style={{background:"#f9fafb",padding:"0.9rem 1.25rem",borderBottom:"1px solid #e5e7eb",fontWeight:700,fontSize:"0.95rem"}}>
                     {svc.service.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())}
                   </div>
+                  {svc.classDiagram && (
+                    <div style={{padding:"1.25rem", borderBottom:"1px solid #e5e7eb"}}>
+                      <div style={{fontSize:"0.8rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:"#6b7280",marginBottom:"0.75rem"}}>UML Class Diagram</div>
+                      <MermaidChart chart={svc.classDiagram} />
+                    </div>
+                  )}
+                  {svc.designPatterns && svc.designPatterns.length > 0 && (
+                    <div style={{padding:"1.25rem", borderBottom:"1px solid #e5e7eb"}}>
+                       <div style={{fontSize:"0.8rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",color:"#6b7280",marginBottom:"0.75rem"}}>Recommended Design Patterns</div>
+                       <div style={{display:"flex",flexWrap:"wrap",gap:"0.5rem"}}>
+                        {svc.designPatterns.map((p,i) => (
+                          <span key={i} style={{background:"#f3f4f6",color:"#374151",border:"1px solid #e5e7eb",padding:"6px 10px",borderRadius:"6px",fontSize:"0.8rem",fontWeight:600}}>{p}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div style={{padding:"1.25rem",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.25rem"}}>
                     {svc.layers && Object.entries(svc.layers).map(([ln,items])=>(
                       <div key={ln}>
