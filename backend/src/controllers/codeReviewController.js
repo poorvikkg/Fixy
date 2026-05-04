@@ -38,7 +38,7 @@ async function reviewCode(req, res) {
       status: "success",
       repo: { owner, repo, filesCrawled: files.length },
       review,
-      fileTree: files.map(f => ({ path: f.path, language: f.language, lines: f.content.split("\n").length }))
+      fileTree: files.map(file => ({ path: file.path, language: file.language, lines: file.content.split("\n").length }))
     });
 
   } catch (err) {

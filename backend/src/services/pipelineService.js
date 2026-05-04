@@ -15,8 +15,8 @@ function buildRequestPipeline(decisions) {
   ];
 
   // Route to services
-  decisions.services.forEach((s) => {
-    pipeline.push(`route_to_${s}`);
+  decisions.services.forEach((service) => {
+    pipeline.push(`route_to_${service}`);
   });
 
   // Core processing stage

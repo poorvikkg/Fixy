@@ -12,7 +12,7 @@ function generateIaC(decisions) {
   let composeFile = `version: '3.8'\n\nservices:\n`;
 
   // 1. Edge / API Gateway
-  const hasGateway = infra.some(i => i.includes("Gateway"));
+  const hasGateway = infra.some(infrastructureItem => infrastructureItem.includes("Gateway"));
   if (hasGateway || infra.includes("lb") || infra.includes("load_balancer")) {
     composeFile += `
   api-gateway:
@@ -22,28 +22,28 @@ function generateIaC(decisions) {
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-${services.map(s => `      - ${s.replace(/_/g, "-")}`).join("\n")}
+${services.map(serviceName => `      - ${serviceName.replace(/_/g, "-")}`).join("\n")}
     networks:
       - fixy-network
 `;
   }
 
   // 2. Services
-  services.forEach(svc => {
-    const svcName = svc.replace(/_/g, "-");
+  services.forEach(service => {
+    const serviceName = service.replace(/_/g, "-");
     composeFile += `
-  ${svcName}:
-    build: ./${svcName}
+  ${serviceName}:
+    build: ./${serviceName}
     environment:
       - NODE_ENV=production
       - PORT=3000
-${dataLayer.some(d => d.includes("SQL")) ? `      - DATABASE_URL=postgres://user:pass@postgres:5432/db\n` : ''}${dataLayer.some(d => d.includes("Redis") || d.includes("cache")) ? `      - REDIS_URL=redis://redis:6379\n` : ''}${asyncLayer.some(a => a.includes("Kafka")) ? `      - KAFKA_BROKERS=kafka:9092\n` : ''}    networks:
+${dataLayer.some(database => database.includes("SQL")) ? `      - DATABASE_URL=postgres://user:pass@postgres:5432/db\n` : ''}${dataLayer.some(database => database.includes("Redis") || database.includes("cache")) ? `      - REDIS_URL=redis://redis:6379\n` : ''}${asyncLayer.some(asyncItem => asyncItem.includes("Kafka")) ? `      - KAFKA_BROKERS=kafka:9092\n` : ''}    networks:
       - fixy-network
 `;
   });
 
   // 3. Data Layer
-  if (dataLayer.some(d => d.includes("SQL") && !d.includes("NoSQL"))) {
+  if (dataLayer.some(database => database.includes("SQL") && !database.includes("NoSQL"))) {
     composeFile += `
   postgres:
     image: postgres:15-alpine
@@ -60,7 +60,7 @@ ${dataLayer.some(d => d.includes("SQL")) ? `      - DATABASE_URL=postgres://user
 `;
   }
 
-  if (dataLayer.some(d => d.includes("NoSQL"))) {
+  if (dataLayer.some(database => database.includes("NoSQL"))) {
     composeFile += `
   mongodb:
     image: mongo:6
@@ -73,7 +73,7 @@ ${dataLayer.some(d => d.includes("SQL")) ? `      - DATABASE_URL=postgres://user
 `;
   }
 
-  if (dataLayer.some(d => d.includes("Redis") || d.includes("cache"))) {
+  if (dataLayer.some(database => database.includes("Redis") || database.includes("cache"))) {
     composeFile += `
   redis:
     image: redis:7-alpine
@@ -87,7 +87,7 @@ ${dataLayer.some(d => d.includes("SQL")) ? `      - DATABASE_URL=postgres://user
   }
 
   // 4. Async Layer (Kafka/RabbitMQ)
-  if (asyncLayer.some(a => a.includes("Kafka"))) {
+  if (asyncLayer.some(asyncItem => asyncItem.includes("Kafka"))) {
     composeFile += `
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
@@ -141,9 +141,9 @@ networks:
 
 volumes:
 `;
-  if (dataLayer.some(d => d.includes("SQL") && !d.includes("NoSQL"))) composeFile += `  pgdata:\n`;
-  if (dataLayer.some(d => d.includes("NoSQL"))) composeFile += `  mongodata:\n`;
-  if (dataLayer.some(d => d.includes("Redis") || d.includes("cache"))) composeFile += `  redisdata:\n`;
+  if (dataLayer.some(db => db.includes("SQL") && !db.includes("NoSQL"))) composeFile += `  pgdata:\n`;
+  if (dataLayer.some(db => db.includes("NoSQL"))) composeFile += `  mongodata:\n`;
+  if (dataLayer.some(db => db.includes("Redis") || db.includes("cache"))) composeFile += `  redisdata:\n`;
 
   return {
     dockerCompose: composeFile

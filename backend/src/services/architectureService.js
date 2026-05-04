@@ -177,15 +177,15 @@ function generateArchitecture(decisions) {
   }
 
   // ── Data Layer ──
-  decisions.dataLayer.forEach(d => {
-    nodes.push({ id: d, label: label(d), layer: "data" });
-    coreServices.forEach(svc => edges.push([svc, d]));
+  decisions.dataLayer.forEach(db => {
+    nodes.push({ id: db, label: label(db), layer: "data" });
+    coreServices.forEach(svc => edges.push([svc, db]));
   });
 
   // ── Async Layer ──
-  decisions.asyncLayer.forEach(a => {
-    nodes.push({ id: a, label: label(a), layer: "async" });
-    coreServices.forEach(svc => edges.push([svc, a]));
+  decisions.asyncLayer.forEach(asyncItem => {
+    nodes.push({ id: asyncItem, label: label(asyncItem), layer: "async" });
+    coreServices.forEach(svc => edges.push([svc, asyncItem]));
   });
 
   return { nodes, edges };

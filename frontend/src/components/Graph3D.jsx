@@ -90,14 +90,14 @@ function Graph3D({ data }) {
     const nodes = data.graph.nodes || [];
     
     nodes.forEach((node) => {
-      const l = node.layer || 'service';
-      layerCounts[l] = (layerCounts[l] || 0) + 1;
-      const count = layerCounts[l];
+      const layerId = node.layer || 'service';
+      layerCounts[layerId] = (layerCounts[layerId] || 0) + 1;
+      const count = layerCounts[layerId];
 
-      const zPos = layers[l] || 0;
+      const zPos = layers[layerId] || 0;
       const xPos = (count - 1) * 6 - 10; // Spread horizontally
 
-      const color = layerColor[l] || 0xffffff;
+      const color = layerColor[layerId] || 0xffffff;
 
       const material = new THREE.MeshStandardMaterial({
         color: color,
@@ -176,7 +176,7 @@ function Graph3D({ data }) {
     particle.visible = false;
     scene.add(particle);
 
-    let t = 0;
+    let timeProgress = 0;
     let segment = 0;
 
     // Animation Loop
@@ -210,13 +210,13 @@ function Graph3D({ data }) {
           cp.y += dist * 0.2;
           
           const curve = new THREE.QuadraticBezierCurve3(p1, cp, p2);
-          const pos = curve.getPoint(t);
+          const pos = curve.getPoint(timeProgress);
           particle.position.copy(pos);
 
-          t += delta * 1.5; // Speed
+          timeProgress += delta * 1.5; // Speed
 
-          if (t >= 1) {
-            t = 0;
+          if (timeProgress >= 1) {
+            timeProgress = 0;
             segment++;
             if (segment >= flowPath.length - 1) {
               segment = 0;
@@ -234,12 +234,12 @@ function Graph3D({ data }) {
     // Resize Handler
     function onWindowResize() {
       if (!mountNode) return;
-      const w = mountNode.clientWidth;
-      const h = mountNode.clientHeight;
-      camera.aspect = w / h;
+      const currentWidth = mountNode.clientWidth;
+      const currentHeight = mountNode.clientHeight;
+      camera.aspect = currentWidth / currentHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-      composer.setSize(w, h);
+      renderer.setSize(currentWidth, currentHeight);
+      composer.setSize(currentWidth, currentHeight);
     }
     window.addEventListener("resize", onWindowResize);
 

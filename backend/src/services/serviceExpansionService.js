@@ -10,69 +10,65 @@ function getAppTypePatterns(serviceName, featureFlags) {
   const extras = [];
   const domain = featureFlags.appType || 'social';
 
-  // ── Auth service domain overlays ──
-  if (serviceName === 'auth_service') {
-    if (featureFlags.isFintech || featureFlags.isPci)    extras.push('Zero Trust Architecture — no implicit trust between services', 'PCI-DSS Token Vault — card data replaced with payment tokens', 'Step-Up Auth — re-authenticate for high-value transactions');
-    if (featureFlags.isHealthcare || featureFlags.isHipaa) extras.push('HIPAA BAA-compliant Session Management', 'SAML 2.0 / SCIM for enterprise hospital SSO', 'PHI Access Audit Log (required by HIPAA §164.312)');
-    if (featureFlags.isGdpr)                  extras.push('Right-to-be-Forgotten — token + session purge on account delete', 'Consent Record Pattern — store legal basis for each data processing');
-    if (featureFlags.isSocialApp)             extras.push('Social OAuth Delegation — Login with Google/Facebook/Apple');
-    if (featureFlags.isGaming)                extras.push('Guest Account Pattern — anonymous session upgradeable to registered', 'Anti-Cheat Token Binding — device fingerprint embedded in JWT');
-    if (featureFlags.isSaas)                  extras.push('Multi-Tenant JWT Claims — org_id + role scoped per tenant', 'API Key Pattern — machine-to-machine service authentication');
-    if (featureFlags.useGrpc)                 extras.push('mTLS between services — gRPC Interceptor for certificate validation');
-    if (featureFlags.isLargeScale)            extras.push('Distributed Session Store — Redis Cluster, not single node');
+  const domainOverlays = {
+    auth_service: () => {
+      if (featureFlags.isFintech || featureFlags.isPci)    extras.push('Zero Trust Architecture — no implicit trust between services', 'PCI-DSS Token Vault — card data replaced with payment tokens', 'Step-Up Auth — re-authenticate for high-value transactions');
+      if (featureFlags.isHealthcare || featureFlags.isHipaa) extras.push('HIPAA BAA-compliant Session Management', 'SAML 2.0 / SCIM for enterprise hospital SSO', 'PHI Access Audit Log (required by HIPAA §164.312)');
+      if (featureFlags.isGdpr)                  extras.push('Right-to-be-Forgotten — token + session purge on account delete', 'Consent Record Pattern — store legal basis for each data processing');
+      if (featureFlags.isSocialApp)             extras.push('Social OAuth Delegation — Login with Google/Facebook/Apple');
+      if (featureFlags.isGaming)                extras.push('Guest Account Pattern — anonymous session upgradeable to registered', 'Anti-Cheat Token Binding — device fingerprint embedded in JWT');
+      if (featureFlags.isSaas)                  extras.push('Multi-Tenant JWT Claims — org_id + role scoped per tenant', 'API Key Pattern — machine-to-machine service authentication');
+      if (featureFlags.useGrpc)                 extras.push('mTLS between services — gRPC Interceptor for certificate validation');
+      if (featureFlags.isLargeScale)            extras.push('Distributed Session Store — Redis Cluster, not single node');
+    },
+    feed_service: () => {
+      if (featureFlags.isEcommerce)             extras.push('Personalization Engine — ML model ranks products by user purchase history', 'Collaborative Filtering — "Users who bought X also bought Y"', 'Price-Aware Sorting — boost discounted items via weighted score');
+      if (featureFlags.isSocialApp)             extras.push('EdgeRank Algorithm — Facebook-style engagement-weighted feed', 'Celebrity Problem Solution — pull-on-read for accounts >10K followers');
+      if (featureFlags.isGaming)                extras.push('Leaderboard Pattern — Redis Sorted Set (ZADD/ZRANK) for real-time rankings', 'Activity Feed — broadcast game events to friends in real time');
+      if (featureFlags.isFintech)               extras.push('Audit Feed Pattern — immutable, append-only transaction history', 'Temporal Pattern — point-in-time balance reconstruction from events');
+      if (featureFlags.isHealthcare)            extras.push('Care Timeline — chronological patient event feed with PHI masking');
+      if (featureFlags.isCqrs)                  extras.push('Event Sourcing — PostPublished/PostLiked events as source of truth');
+      if (featureFlags.isLargeScale)            extras.push('Sharded Fan-out — partition fan-out workers by user_id hash range');
+      if (featureFlags.needsAnalytics)          extras.push('Lambda Architecture — batch (Spark) + speed (Kafka Streams) for feed analytics');
+    },
+    chat_service: () => {
+      if (featureFlags.isHealthcare)            extras.push('HIPAA-Secure Messaging — end-to-end encryption (Signal Protocol)', 'Message Retention Policy — PHI auto-purge after 7 years', 'Consent-Gated Chat — patient must consent before provider can message');
+      if (featureFlags.isFintech)               extras.push('Encrypted Audit Chat — all messages archived for regulatory review', 'Advisory Chat Pattern — advisor ↔ client session with full audit trail');
+      if (featureFlags.isGaming)                extras.push('Matchmaking Channel — ephemeral game lobby chat (auto-destroyed on game end)', 'Proximity Chat — spatial audio/text based on in-game coordinates');
+      if (featureFlags.isSaas)                  extras.push('Workspace Messaging Pattern — org-scoped channels (like Slack)', 'Thread Pattern — hierarchical reply chains within channels');
+      if (featureFlags.isSocialApp)             extras.push('Read Receipts Pattern — 1:1 delivery + read timestamp tracking', 'Group Chat Fan-out — Redis broadcast to all room members');
+      if (featureFlags.isLargeScale)            extras.push('Horizontal Scaling Pattern — sticky sessions via consistent hash of room_id to pod');
+      if (featureFlags.needsRealtime)           extras.push('WebRTC Signaling Pattern — chat service as signaling server for P2P voice/video');
+    },
+    media_service: () => {
+      if (featureFlags.isHealthcare || featureFlags.isHipaa) extras.push('DICOM Storage Pattern — medical imaging stored in HIPAA-compliant S3 with KMS', 'PHI Redaction Pipeline — ML-based auto-redact patient identifiers in images');
+      if (featureFlags.isEcommerce)             extras.push('Product Image CDN Pattern — multi-variant (zoom, thumbnail, mobile) per SKU', 'Virtual Try-On Hook — AR model inference on uploaded product images');
+      if (featureFlags.isSocialApp)             extras.push('Stories Pattern — 24h TTL media with lifecycle rule to auto-delete', 'Short Video Transcoding — adaptive bitrate HLS segments (like TikTok)');
+      if (featureFlags.isFintech)               extras.push('KYC Document Pattern — encrypted document upload with access-controlled pre-signed URLs', 'Document Retention Policy — immutable storage for compliance (WORM buckets)');
+      if (featureFlags.isGaming)                extras.push('Game Asset CDN — binary asset versioning with blue/green CDN deploy', 'Screenshot Capture Pattern — server-side render capture for game replays');
+      if (featureFlags.isPci || featureFlags.isFintech)    extras.push('SSE-KMS Encryption — customer-managed keys, never stored in plaintext');
+    },
+    notification_service: () => {
+      if (featureFlags.isEcommerce)             extras.push('Cart Abandonment Pattern — delayed trigger (30min) if no checkout event', 'Price Drop Alert — subscriber pattern for watched product price changes', 'Order Lifecycle Notifications — shipped/delivered Kafka event chain');
+      if (featureFlags.isFintech)               extras.push('Transaction Alert Pattern — real-time push on any debit/credit event', 'Fraud Alert — high-priority push bypasses DND and frequency caps', 'Regulatory Notice Pattern — mandatory delivery acknowledgement (audit log)');
+      if (featureFlags.isHealthcare)            extras.push('Appointment Reminder — HIPAA-compliant SMS/email with no PHI in payload', 'Critical Lab Result Alert — escalation chain until acknowledged');
+      if (featureFlags.isGaming)                extras.push('Friend Activity Alert — "X just went online / achieved X" social triggers', 'Live Event Notification — broadcast push to all subscribed players');
+      if (featureFlags.isSaas)                  extras.push('Webhook Delivery Pattern — send events to customer endpoints with retry + HMAC signature', 'Digest Notification — daily/weekly batch rollup email');
+    },
+    user_service: () => {
+      if (featureFlags.isEcommerce)             extras.push('Customer Segmentation Pattern — tag users by CLV, cohort, purchase behavior', 'Wishlist Pattern — lightweight user ↔ product relationship store');
+      if (featureFlags.isHealthcare)            extras.push('Patient-Provider Relationship Pattern — regulated linkage with consent record', 'PHI Masking Pattern — PII fields encrypted at-rest, decrypted only on authorized access');
+      if (featureFlags.isFintech)               extras.push('KYC Status Pattern — multi-step identity verification state machine', 'Account Tier Pattern — BASIC → VERIFIED → PREMIUM with gated feature access');
+      if (featureFlags.isSaas)                  extras.push('Multi-Tenancy Pattern — all queries scoped by org_id (row-level security)', 'Invitation Pattern — workspace invite flow with time-limited token');
+      if (featureFlags.isGaming)                extras.push('Player Profile Pattern — XP, level, achievements as first-class entities', 'Squad/Clan Pattern — hierarchical group membership with roles');
+      if (featureFlags.isLargeScale)            extras.push('Read Replica Fan-out — user reads served from replica, writes to primary');
+    }
+  };
+
+  if (domainOverlays[serviceName]) {
+    domainOverlays[serviceName]();
   }
 
-  // ── Feed service domain overlays ──
-  if (serviceName === 'feed_service') {
-    if (featureFlags.isEcommerce)             extras.push('Personalization Engine — ML model ranks products by user purchase history', 'Collaborative Filtering — "Users who bought X also bought Y"', 'Price-Aware Sorting — boost discounted items via weighted score');
-    if (featureFlags.isSocialApp)             extras.push('EdgeRank Algorithm — Facebook-style engagement-weighted feed', 'Celebrity Problem Solution — pull-on-read for accounts >10K followers');
-    if (featureFlags.isGaming)                extras.push('Leaderboard Pattern — Redis Sorted Set (ZADD/ZRANK) for real-time rankings', 'Activity Feed — broadcast game events to friends in real time');
-    if (featureFlags.isFintech)               extras.push('Audit Feed Pattern — immutable, append-only transaction history', 'Temporal Pattern — point-in-time balance reconstruction from events');
-    if (featureFlags.isHealthcare)            extras.push('Care Timeline — chronological patient event feed with PHI masking');
-    if (featureFlags.isCqrs)                  extras.push('Event Sourcing — PostPublished/PostLiked events as source of truth');
-    if (featureFlags.isLargeScale)            extras.push('Sharded Fan-out — partition fan-out workers by user_id hash range');
-    if (featureFlags.needsAnalytics)          extras.push('Lambda Architecture — batch (Spark) + speed (Kafka Streams) for feed analytics');
-  }
-
-  // ── Chat service domain overlays ──
-  if (serviceName === 'chat_service') {
-    if (featureFlags.isHealthcare)            extras.push('HIPAA-Secure Messaging — end-to-end encryption (Signal Protocol)', 'Message Retention Policy — PHI auto-purge after 7 years', 'Consent-Gated Chat — patient must consent before provider can message');
-    if (featureFlags.isFintech)               extras.push('Encrypted Audit Chat — all messages archived for regulatory review', 'Advisory Chat Pattern — advisor ↔ client session with full audit trail');
-    if (featureFlags.isGaming)                extras.push('Matchmaking Channel — ephemeral game lobby chat (auto-destroyed on game end)', 'Proximity Chat — spatial audio/text based on in-game coordinates');
-    if (featureFlags.isSaas)                  extras.push('Workspace Messaging Pattern — org-scoped channels (like Slack)', 'Thread Pattern — hierarchical reply chains within channels');
-    if (featureFlags.isSocialApp)             extras.push('Read Receipts Pattern — 1:1 delivery + read timestamp tracking', 'Group Chat Fan-out — Redis broadcast to all room members');
-    if (featureFlags.isLargeScale)            extras.push('Horizontal Scaling Pattern — sticky sessions via consistent hash of room_id to pod');
-    if (featureFlags.needsRealtime)           extras.push('WebRTC Signaling Pattern — chat service as signaling server for P2P voice/video');
-  }
-
-  // ── Media service domain overlays ──
-  if (serviceName === 'media_service') {
-    if (featureFlags.isHealthcare || featureFlags.isHipaa) extras.push('DICOM Storage Pattern — medical imaging stored in HIPAA-compliant S3 with KMS', 'PHI Redaction Pipeline — ML-based auto-redact patient identifiers in images');
-    if (featureFlags.isEcommerce)             extras.push('Product Image CDN Pattern — multi-variant (zoom, thumbnail, mobile) per SKU', 'Virtual Try-On Hook — AR model inference on uploaded product images');
-    if (featureFlags.isSocialApp)             extras.push('Stories Pattern — 24h TTL media with lifecycle rule to auto-delete', 'Short Video Transcoding — adaptive bitrate HLS segments (like TikTok)');
-    if (featureFlags.isFintech)               extras.push('KYC Document Pattern — encrypted document upload with access-controlled pre-signed URLs', 'Document Retention Policy — immutable storage for compliance (WORM buckets)');
-    if (featureFlags.isGaming)                extras.push('Game Asset CDN — binary asset versioning with blue/green CDN deploy', 'Screenshot Capture Pattern — server-side render capture for game replays');
-    if (featureFlags.isPci || featureFlags.isFintech)    extras.push('SSE-KMS Encryption — customer-managed keys, never stored in plaintext');
-  }
-
-  // ── Notification service domain overlays ──
-  if (serviceName === 'notification_service') {
-    if (featureFlags.isEcommerce)             extras.push('Cart Abandonment Pattern — delayed trigger (30min) if no checkout event', 'Price Drop Alert — subscriber pattern for watched product price changes', 'Order Lifecycle Notifications — shipped/delivered Kafka event chain');
-    if (featureFlags.isFintech)               extras.push('Transaction Alert Pattern — real-time push on any debit/credit event', 'Fraud Alert — high-priority push bypasses DND and frequency caps', 'Regulatory Notice Pattern — mandatory delivery acknowledgement (audit log)');
-    if (featureFlags.isHealthcare)            extras.push('Appointment Reminder — HIPAA-compliant SMS/email with no PHI in payload', 'Critical Lab Result Alert — escalation chain until acknowledged');
-    if (featureFlags.isGaming)                extras.push('Friend Activity Alert — "X just went online / achieved X" social triggers', 'Live Event Notification — broadcast push to all subscribed players');
-    if (featureFlags.isSaas)                  extras.push('Webhook Delivery Pattern — send events to customer endpoints with retry + HMAC signature', 'Digest Notification — daily/weekly batch rollup email');
-  }
-
-  // ── User service domain overlays ──
-  if (serviceName === 'user_service') {
-    if (featureFlags.isEcommerce)             extras.push('Customer Segmentation Pattern — tag users by CLV, cohort, purchase behavior', 'Wishlist Pattern — lightweight user ↔ product relationship store');
-    if (featureFlags.isHealthcare)            extras.push('Patient-Provider Relationship Pattern — regulated linkage with consent record', 'PHI Masking Pattern — PII fields encrypted at-rest, decrypted only on authorized access');
-    if (featureFlags.isFintech)               extras.push('KYC Status Pattern — multi-step identity verification state machine', 'Account Tier Pattern — BASIC → VERIFIED → PREMIUM with gated feature access');
-    if (featureFlags.isSaas)                  extras.push('Multi-Tenancy Pattern — all queries scoped by org_id (row-level security)', 'Invitation Pattern — workspace invite flow with time-limited token');
-    if (featureFlags.isGaming)                extras.push('Player Profile Pattern — XP, level, achievements as first-class entities', 'Squad/Clan Pattern — hierarchical group membership with roles');
-    if (featureFlags.isLargeScale)            extras.push('Read Replica Fan-out — user reads served from replica, writes to primary');
-  }
 
   // ── Cross-cutting: compliance ──
   if (featureFlags.requiresCompliance && !featureFlags.isFintech && !featureFlags.isHealthcare) {

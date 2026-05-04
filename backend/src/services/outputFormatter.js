@@ -68,8 +68,8 @@ Reliability:
 function buildTradeoffExplanation(insights) {
   return insights.tradeoffs
     .map(
-      (t) =>
-        `Decision: ${t.decision}\nAdvantage: ${t.advantage}\nDisadvantage: ${t.disadvantage}\n`
+      (tradeoff) =>
+        `Decision: ${tradeoff.decision}\nAdvantage: ${tradeoff.advantage}\nDisadvantage: ${tradeoff.disadvantage}\n`
     )
     .join("\n");
 }

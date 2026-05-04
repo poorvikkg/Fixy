@@ -5,18 +5,30 @@ import mermaid from "mermaid";
 mermaid.initialize({ startOnLoad: false, theme: 'dark' });
 
 const MermaidChart = ({ chart }) => {
-  const ref = useRef(null);
+  const [svgContent, setSvgContent] = useState("");
+  const [error, setError] = useState("");
+
   useEffect(() => {
-    if (ref.current && chart) {
+    if (chart) {
       mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, chart)
         .then(({ svg }) => {
-          ref.current.innerHTML = svg;
+          setSvgContent(svg);
+          setError("");
         }).catch(e => {
-          ref.current.innerHTML = `<pre style="color:red;font-size:0.8rem">${e.message}</pre>`;
+          setError(e.message);
         });
     }
   }, [chart]);
-  return <div ref={ref} className="mermaid-container" style={{ background:"#111827", padding:"1rem", borderRadius:"8px", border:"1px solid #374151", overflowX:"auto" }} />;
+
+  if (error) return <div style={{ color:"red", fontSize:"0.8rem", background:"#111827", padding:"1rem", borderRadius:"8px" }}>{error}</div>;
+
+  return (
+    <div 
+      className="mermaid-container" 
+      style={{ background:"#111827", padding:"1rem", borderRadius:"8px", border:"1px solid #374151", overflowX:"auto" }}
+      dangerouslySetInnerHTML={{ __html: svgContent }} 
+    />
+  );
 };
 
 const SEV_COLOR = { critical:"#ef4444", high:"#f59e0b", medium:"#3b82f6", info:"#10b981" };
@@ -85,7 +97,11 @@ export default function ImproveMode({ onBack }) {
     try {
       const res = await fetch("http://localhost:5000/api/code-review", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ repoUrl, githubToken })
+        body: JSON.stringify({ 
+          repoUrl, 
+          githubToken,
+          jobId: `job_${Date.now()}` 
+        })
       });
       const data = await res.json();
       if (data.status === "success") { 

@@ -199,15 +199,15 @@ const nodeTypes = { arch: ArchNode };
 
 // ── Dagre auto layout ──
 function autoLayout(nodes, edges) {
-  const g = new dagre.graphlib.Graph();
-  g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: "LR", ranksep: 160, nodesep: 55, marginx: 40, marginy: 40 });
-  nodes.forEach(n => g.setNode(n.id, { width: 175, height: 95 }));
-  edges.forEach(e => g.setEdge(e.source, e.target));
-  dagre.layout(g);
+  const layoutGraph = new dagre.graphlib.Graph();
+  layoutGraph.setDefaultEdgeLabel(() => ({}));
+  layoutGraph.setGraph({ rankdir: "LR", ranksep: 160, nodesep: 55, marginx: 40, marginy: 40 });
+  nodes.forEach(n => layoutGraph.setNode(n.id, { width: 175, height: 95 }));
+  edges.forEach(e => layoutGraph.setEdge(e.source, e.target));
+  dagre.layout(layoutGraph);
   return nodes.map(n => {
-    const p = g.node(n.id);
-    return { ...n, position: { x: p.x - 87, y: p.y - 47 }, targetPosition: Position.Left, sourcePosition: Position.Right };
+    const nodePosition = layoutGraph.node(n.id);
+    return { ...n, position: { x: nodePosition.x - 87, y: nodePosition.y - 47 }, targetPosition: Position.Left, sourcePosition: Position.Right };
   });
 }
 
