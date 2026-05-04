@@ -218,9 +218,9 @@ export default function BuildMode({ onBack }) {
         {result && (
           <div className="main-toolbar">
             <div className="toolbar-title">{form.appType} · {Number(form.users).toLocaleString()} DAU</div>
-            {["hld","lld","insights"].map(t=>(
+            {["hld","lld","insights","iac"].map(t=>(
               <button key={t} className={`toolbar-tab ${activeTab===t?"active":""}`} onClick={()=>setActiveTab(t)}>
-                {t==="hld"?"HLD Diagram":t==="lld"?"LLD Details":"Scaling & Tradeoffs"}
+                {t==="hld"?"HLD Diagram":t==="lld"?"LLD Details":t==="insights"?"Scaling & Tradeoffs":"Infrastructure (IaC)"}
               </button>
             ))}
           </div>
@@ -378,6 +378,31 @@ export default function BuildMode({ onBack }) {
                   <div style={{color:"#dc2626",fontSize:"0.88rem"}}>⚠️ {t.disadvantage}</div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {activeTab==="iac" && result && (
+            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"#111827",color:"#f9fafb"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem"}}>
+                <div>
+                  <h2 style={{fontSize:"1.2rem",fontWeight:700,color:"#e5e7eb",marginBottom:"0.5rem"}}>Infrastructure as Code</h2>
+                  <div style={{fontSize:"0.85rem",color:"#9ca3af"}}>Auto-generated Docker Compose based on your architecture decisions.</div>
+                </div>
+                <button className="btn-primary" onClick={()=>{
+                  const blob = new Blob([result.raw.iac.dockerCompose], { type: "text/yaml" });
+                  const link = document.createElement("a");
+                  link.href = URL.createObjectURL(blob);
+                  link.download = "docker-compose.yml";
+                  link.click();
+                }}>↓ Download Compose File</button>
+              </div>
+              <pre style={{
+                background:"#0d1117", color:"#c9d1d9", padding:"1.5rem",
+                borderRadius:"10px", fontSize:"0.8rem", fontFamily:"'JetBrains Mono', monospace",
+                border:"1px solid #30363d", overflowX:"auto"
+              }}>
+                <code>{result.raw.iac.dockerCompose}</code>
+              </pre>
             </div>
           )}
         </div>

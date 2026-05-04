@@ -9,9 +9,9 @@ function analyzeArchitecture(input) {
   const improvements = [];
   const tradeoffs = [];
 
-  const desc = (input.description || "").toLowerCase();
-  const pain = (input.painPoints || "").toLowerCase();
-  const scale = input.currentScale || "unknown";
+  const desc = (input.existingHLD || "").toLowerCase();
+  const pain = (input.improvementsWanted || "").toLowerCase();
+  const scale = input.currentScale || "medium";
   const stack = (input.techStack || "").toLowerCase();
 
   // ── Scale / DB issues ──
@@ -167,41 +167,83 @@ function analyzeArchitecture(input) {
 }
 
 function generateImprovedArchitecture(input, analysis) {
-  // Build a suggested improved architecture as a graph
+  // Build a highly detailed, enterprise-grade target architecture
   const nodes = [];
   const edges = [];
 
-  nodes.push({ id: "client", label: "Client", layer: "client" });
-  nodes.push({ id: "cdn", label: "CDN (Cloudflare/CloudFront)", layer: "edge" });
-  nodes.push({ id: "gateway", label: "API Gateway + Rate Limiter", layer: "edge" });
-  nodes.push({ id: "lb", label: "Load Balancer", layer: "traffic" });
-  nodes.push({ id: "auth", label: "Auth Service (JWT/OAuth2)", layer: "service" });
+  const desc = (input.existingHLD || "").toLowerCase();
+  const pain = (input.improvementsWanted || "").toLowerCase();
+  const scale = input.currentScale || "medium";
+  const features = input.features || [];
 
-  const desc = (input.description || "").toLowerCase();
-  if (desc.includes("chat") || (input.features || []).includes("chat")) {
-    nodes.push({ id: "chat", label: "Chat Service (WebSocket)", layer: "service" });
+  // Edge Layer
+  nodes.push({ id: "client", label: "Client Applications (Web/Mobile)", layer: "client" });
+  nodes.push({ id: "cdn", label: "Global CDN (Cloudflare/CloudFront)", layer: "edge" });
+  nodes.push({ id: "waf", label: "WAF & Shield", layer: "edge" });
+  nodes.push({ id: "route53", label: "Global DNS (Route53)", layer: "edge" });
+
+  // Traffic / Gateway Layer
+  nodes.push({ id: "alb", label: "Application Load Balancer", layer: "traffic" });
+  nodes.push({ id: "api_gateway", label: "API Gateway (Rate Limiting/Auth)", layer: "traffic" });
+
+  // Service Layer (Microservices)
+  nodes.push({ id: "auth_svc", label: "Identity & Auth Service (OIDC)", layer: "service" });
+  nodes.push({ id: "core_svc", label: "Core Business Service (K8s Pods)", layer: "service" });
+  
+  if (desc.includes("feed") || pain.includes("feed") || features.includes("feed")) {
+    nodes.push({ id: "feed_svc", label: "Feed Generation Service (CQRS)", layer: "service" });
   }
-  if (desc.includes("feed") || (input.features || []).includes("feed")) {
-    nodes.push({ id: "feed", label: "Feed Service (CQRS)", layer: "service" });
+  if (desc.includes("chat") || pain.includes("chat") || features.includes("chat")) {
+    nodes.push({ id: "chat_svc", label: "Real-time Chat Service (WebSockets)", layer: "service" });
   }
-  nodes.push({ id: "core", label: "Core Business Service", layer: "service" });
-  nodes.push({ id: "notify", label: "Notification Service", layer: "service" });
+  nodes.push({ id: "notify_svc", label: "Push Notification Service", layer: "service" });
+  nodes.push({ id: "search_svc", label: "Search Service (Elasticsearch)", layer: "service" });
 
-  nodes.push({ id: "cache", label: "Redis Cache", layer: "data" });
-  nodes.push({ id: "db_primary", label: "Primary DB", layer: "data" });
-  nodes.push({ id: "db_replica", label: "Read Replica", layer: "data" });
-  nodes.push({ id: "queue", label: "Message Queue (SQS/Kafka)", layer: "async" });
-  nodes.push({ id: "worker", label: "Worker Services", layer: "async" });
-  nodes.push({ id: "monitor", label: "Observability Stack", layer: "async" });
+  // Data / State Layer
+  nodes.push({ id: "cache_cluster", label: "Redis Cluster (LRU/Session/PubSub)", layer: "data" });
+  nodes.push({ id: "db_primary", label: "Primary DB (Write-Heavy)", layer: "data" });
+  nodes.push({ id: "db_replica", label: "Read Replicas (Auto-scaling)", layer: "data" });
+  nodes.push({ id: "object_store", label: "Object Storage (S3)", layer: "data" });
 
-  edges.push(["client", "cdn"], ["cdn", "gateway"], ["gateway", "lb"],
-    ["lb", "auth"], ["lb", "core"],
-    ["core", "cache"], ["core", "db_primary"], ["db_primary", "db_replica"],
-    ["core", "queue"], ["queue", "worker"],
-    ["lb", "notify"], ["notify", "queue"]);
+  // Async / Background Layer
+  nodes.push({ id: "event_bus", label: "Event Bus / Kafka Cluster", layer: "async" });
+  nodes.push({ id: "worker_nodes", label: "Background Worker Nodes", layer: "async" });
+  nodes.push({ id: "data_warehouse", label: "Data Warehouse (Snowflake/BigQuery)", layer: "async" });
 
-  if (nodes.find(n => n.id === "chat")) edges.push(["lb", "chat"], ["chat", "cache"]);
-  if (nodes.find(n => n.id === "feed")) edges.push(["lb", "feed"], ["feed", "cache"], ["feed", "db_replica"]);
+  // Observability
+  nodes.push({ id: "observability", label: "Observability (Datadog/Prometheus)", layer: "async" });
+
+  // Connect Edge
+  edges.push(["client", "route53"], ["route53", "cdn"], ["cdn", "waf"], ["waf", "alb"], ["alb", "api_gateway"]);
+
+  // Connect Gateway to Services
+  edges.push(["api_gateway", "auth_svc"], ["api_gateway", "core_svc"]);
+  if (nodes.find(n => n.id === "feed_svc")) edges.push(["api_gateway", "feed_svc"]);
+  if (nodes.find(n => n.id === "chat_svc")) edges.push(["api_gateway", "chat_svc"]);
+  edges.push(["api_gateway", "search_svc"]);
+
+  // Connect Services to Data / Cache
+  edges.push(["auth_svc", "db_primary"], ["auth_svc", "cache_cluster"]);
+  edges.push(["core_svc", "db_primary"], ["core_svc", "db_replica"], ["core_svc", "cache_cluster"]);
+  edges.push(["core_svc", "object_store"]);
+
+  if (nodes.find(n => n.id === "feed_svc")) {
+    edges.push(["feed_svc", "db_replica"], ["feed_svc", "cache_cluster"]);
+  }
+  if (nodes.find(n => n.id === "chat_svc")) {
+    edges.push(["chat_svc", "cache_cluster"], ["chat_svc", "event_bus"]);
+  }
+
+  // Connect Search
+  edges.push(["search_svc", "db_replica"]);
+
+  // Async flows
+  edges.push(["core_svc", "event_bus"], ["event_bus", "worker_nodes"], ["worker_nodes", "db_primary"]);
+  edges.push(["event_bus", "notify_svc"]);
+  edges.push(["db_replica", "data_warehouse"]); // CDC or batch sync
+
+  // Observability touches everything (simplified here to just point from Gateway and Core)
+  edges.push(["api_gateway", "observability"], ["core_svc", "observability"]);
 
   return { nodes, edges };
 }

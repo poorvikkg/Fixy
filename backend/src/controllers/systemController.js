@@ -5,6 +5,7 @@ const { generatePipelines } = require("../services/pipelineService");
 const { generateServiceExpansion } = require("../services/serviceExpansionService");
 const { generateDataModels } = require("../services/dataModelService");
 const { generateSystemInsights } = require("../services/scalingService");
+const { generateIaC } = require("../services/iacService");
 const { formatOutput } = require("../services/outputFormatter");
 
 function generateSystem(req, res) {
@@ -23,8 +24,9 @@ function generateSystem(req, res) {
     const architecture = generateArchitecture(decisions);
     const pipelines = generatePipelines(decisions);
     const serviceExpansion = generateServiceExpansion(decisions, result.flags);
-    const dataModels = generateDataModels(decisions);
+    const dataModels = generateDataModels(decisions, result.flags);
     const insights = generateSystemInsights(decisions, result.flags);
+    const iac = generateIaC(decisions);
 
     // FINAL STEP
     const explanation = formatOutput(
@@ -42,7 +44,8 @@ function generateSystem(req, res) {
         pipelines,
         serviceExpansion,
         dataModels,
-        insights
+        insights,
+        iac
       },
       explanation
     });
