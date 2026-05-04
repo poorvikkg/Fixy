@@ -1,5 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
 import ArchitectureDiagram from "./ArchitectureDiagram";
+import mermaid from "mermaid";
+
+mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+
+const MermaidChart = ({ chart }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && chart) {
+      mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, chart)
+        .then(({ svg }) => {
+          ref.current.innerHTML = svg;
+        }).catch(e => {
+          ref.current.innerHTML = `<pre style="color:red;font-size:0.8rem">${e.message}</pre>`;
+        });
+    }
+  }, [chart]);
+  return <div ref={ref} className="mermaid-container" style={{ background:"#111827", padding:"1rem", borderRadius:"8px", border:"1px solid #374151", overflowX:"auto" }} />;
+};
 
 const SEV_COLOR = { critical:"#ef4444", high:"#f59e0b", medium:"#3b82f6", info:"#10b981" };
 
@@ -82,6 +100,10 @@ export default function ImproveMode({ onBack }) {
     setLoading(false);
   };
 
+  const handleDownloadPdf = () => {
+    window.print();
+  };
+
   const issues = hldResult?.analysis?.issues || [];
   const improvements = hldResult?.analysis?.improvements || [];
   const review = codeResult?.review || {};
@@ -95,7 +117,7 @@ export default function ImproveMode({ onBack }) {
           <span className="sidebar-logo">FIXY</span>
           <span className="sidebar-mode-badge improve-badge">Audit</span>
         </div>
-        <div className="sidebar-body">
+        <div className="sidebar-body" style={{background: "var(--bg-panel)"}}>
 
           {/* Section Toggle */}
           <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>
@@ -103,12 +125,12 @@ export default function ImproveMode({ onBack }) {
               flex:1,padding:"0.6rem",borderRadius:8,border: section==="hld" ? "2px solid #8b5cf6" : "1px solid #e5e7eb",
               background: section==="hld" ? "rgba(139,92,246,0.08)" : "#fff",
               fontWeight:700,fontSize:"0.82rem",cursor:"pointer",color: section==="hld" ? "#8b5cf6" : "#6b7280"
-            }}>🏗️ HLD Audit</button>
+            }}>HLD Audit</button>
             <button onClick={()=>setSection("lld")} style={{
               flex:1,padding:"0.6rem",borderRadius:8,border: section==="lld" ? "2px solid #10b981" : "1px solid #e5e7eb",
               background: section==="lld" ? "rgba(16,185,129,0.08)" : "#fff",
               fontWeight:700,fontSize:"0.82rem",cursor:"pointer",color: section==="lld" ? "#10b981" : "#6b7280"
-            }}>🔍 LLD Review</button>
+            }}>LLD Review</button>
           </div>
 
           {/* ═══ HLD Section ═══ */}
@@ -123,11 +145,13 @@ export default function ImproveMode({ onBack }) {
               }}>
                 {hldFile ? (
                   <div style={{fontSize:"0.85rem",color:"#8b5cf6",fontWeight:600}}>
-                    📄 {hldFile.name} <span style={{color:"#9ca3af",fontWeight:400}}>({(hldFile.size/1024).toFixed(0)} KB)</span>
+                    {hldFile.name} <span style={{color:"#9ca3af",fontWeight:400}}>({(hldFile.size/1024).toFixed(0)} KB)</span>
                   </div>
                 ) : (
                   <div style={{color:"#9ca3af",fontSize:"0.85rem"}}>
-                    <div style={{fontSize:"1.5rem",marginBottom:"0.25rem"}}>📁</div>
+                    <div style={{marginBottom:"0.25rem"}}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{margin:"0 auto"}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    </div>
                     Click to upload PDF or Image
                   </div>
                 )}
@@ -193,8 +217,9 @@ export default function ImproveMode({ onBack }) {
             </div>
 
             {errorMessage && (
-              <div style={{padding:"0.75rem",background:"rgba(239,68,68,0.1)",borderRadius:10,border:"1px solid rgba(239,68,68,0.2)",marginTop:"0.5rem", color: "#ef4444", fontSize: "0.85rem"}}>
-                ⚠️ {errorMessage}
+              <div style={{padding:"0.75rem",background:"rgba(239,68,68,0.1)",borderRadius:10,border:"1px solid rgba(239,68,68,0.2)",marginTop:"0.5rem", color: "#ef4444", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.5rem"}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                {errorMessage}
               </div>
             )}
 
@@ -221,12 +246,12 @@ export default function ImproveMode({ onBack }) {
           {section === "hld" ? (
             <button className="btn-purple" disabled={loading || (!hldFile && hldForm.existingHLD.length < 10)}
               onClick={hldFile ? handleFileUpload : handleTextAnalyze}>
-              {loading ? "Analyzing..." : hldFile ? "📄 Analyze Uploaded HLD" : "🔍 Analyze & Build New HLD"}
+              {loading ? "Analyzing..." : hldFile ? "Analyze Uploaded HLD" : "Analyze & Build New HLD"}
             </button>
           ) : (
             <button className="btn-purple" disabled={loading || !repoUrl}
               onClick={handleCodeReview}>
-              {loading ? "Crawling Repo..." : "🔍 Run Code Review"}
+              {loading ? "Crawling Repo..." : "Run Code Review"}
             </button>
           )}
         </div>
@@ -253,21 +278,30 @@ export default function ImproveMode({ onBack }) {
               <button className={`toolbar-tab ${activeTab==="complexity"?"active":""}`} onClick={()=>setActiveTab("complexity")}>Complexity</button>
               <button className={`toolbar-tab ${activeTab==="archMap"?"active":""}`} onClick={()=>setActiveTab("archMap")}>Arch Map</button>
             </>)}
+            <div style={{flex: 1}}></div>
+            <button id="export-pdf-btn" onClick={handleDownloadPdf} style={{
+              background: "transparent", border: "1px solid var(--border)", color: "var(--text)", 
+              padding: "0.4rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 600, 
+              cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem"
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Export PDF
+            </button>
           </div>
         )}
 
-        <div className="canvas-area">
+        <div id="pdf-export-area" className="canvas-area">
           {/* Empty states */}
           {!hldResult && section==="hld" && (
             <div className="empty-state">
-              <div className="empty-icon">🏗️</div>
+              <div className="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg></div>
               <div className="empty-title">Upload or Describe Your Architecture</div>
               <div className="empty-desc">Upload a PDF/image of your current HLD, or describe it in text. Fixy will audit it and generate an improved target architecture.</div>
             </div>
           )}
           {!codeResult && section==="lld" && (
             <div className="empty-state">
-              <div className="empty-icon">🔍</div>
+              <div className="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
               <div className="empty-title">Paste a GitHub Repo URL</div>
               <div className="empty-desc">Fixy will crawl your entire codebase, detect anti-patterns, and suggest design patterns, scalability fixes, and readability improvements.</div>
             </div>
@@ -286,7 +320,7 @@ export default function ImproveMode({ onBack }) {
                   </div>
                   <div style={{fontWeight:700,color:"#111",fontSize:"0.95rem",marginBottom:"0.5rem"}}>{issue.title}</div>
                   <div style={{fontSize:"0.88rem",color:"#6b7280",lineHeight:1.6,marginBottom:"0.75rem"}}>{issue.description}</div>
-                  <div style={{fontSize:"0.85rem",color:"#1d4ed8",background:"#eff6ff",padding:"0.6rem 0.8rem",borderRadius:6}}>💡 <strong>Fix:</strong> {issue.fix}</div>
+                  <div style={{fontSize:"0.85rem",color:"#1d4ed8",background:"#eff6ff",padding:"0.6rem 0.8rem",borderRadius:6}}><strong>Fix:</strong> {issue.fix}</div>
                 </div>
               ))}
             </div>
@@ -331,14 +365,14 @@ export default function ImproveMode({ onBack }) {
                   </div>
                   <div style={{fontWeight:700,color:"#111",fontSize:"0.95rem",marginBottom:"0.5rem"}}>{sec.title}</div>
                   <div style={{fontSize:"0.88rem",color:"#6b7280",lineHeight:1.6,marginBottom:"0.5rem"}}>{sec.description}</div>
-                  <div style={{fontSize:"0.85rem",color:"#1d4ed8",background:"#eff6ff",padding:"0.6rem 0.8rem",borderRadius:6}}>💡 <strong>Fix:</strong> {sec.fix}</div>
+                  <div style={{fontSize:"0.85rem",color:"#1d4ed8",background:"#eff6ff",padding:"0.6rem 0.8rem",borderRadius:6}}><strong>Fix:</strong> {sec.fix}</div>
                 </div>
               ))}
             </div>
           )}
 
           {codeResult && activeTab==="codeIssues" && (
-            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"#fff"}}>
+            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"var(--bg)"}}>
               <h2 style={{marginBottom:"1.5rem",fontSize:"1.2rem",fontWeight:700}}>Architecture Issues — {review.summary?.totalFiles} files · {review.summary?.totalLines?.toLocaleString()} lines</h2>
               {(review.issues||[]).map((issue,i)=>(
                 <div key={i} style={{border:"1px solid #e5e7eb",borderRadius:12,padding:"1.25rem",marginBottom:"1rem",borderLeft:`4px solid ${SEV_COLOR[issue.severity]||"#6b7280"}`}}>
@@ -353,14 +387,14 @@ export default function ImproveMode({ onBack }) {
                       {issue.files.map((f,fi)=>(<div key={fi} style={{fontSize:"0.78rem",color:"#9ca3af",fontFamily:"monospace"}}>• {f}</div>))}
                     </div>
                   )}
-                  <div style={{fontSize:"0.85rem",color:"#1d4ed8",background:"#eff6ff",padding:"0.6rem 0.8rem",borderRadius:6}}>💡 <strong>Fix:</strong> {issue.fix}</div>
+                  <div style={{fontSize:"0.85rem",color:"#1d4ed8",background:"#eff6ff",padding:"0.6rem 0.8rem",borderRadius:6}}><strong>Fix:</strong> {issue.fix}</div>
                 </div>
               ))}
             </div>
           )}
 
           {codeResult && activeTab==="patterns" && (
-            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"#fff"}}>
+            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"var(--bg)"}}>
               <h2 style={{marginBottom:"1.5rem",fontSize:"1.2rem",fontWeight:700}}>Recommended Design Patterns</h2>
               {(review.patterns||[]).map((p,i)=>(
                 <div key={i} style={{border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden",marginBottom:"1.25rem"}}>
@@ -382,20 +416,20 @@ export default function ImproveMode({ onBack }) {
           )}
 
           {codeResult && activeTab==="scale" && (
-            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"#fff"}}>
+            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"var(--bg)"}}>
               <h2 style={{marginBottom:"1.5rem",fontSize:"1.2rem",fontWeight:700}}>Scalability Recommendations</h2>
               {(review.scalability||[]).map((s,i)=>(
                 <div key={i} style={{border:"1px solid #e5e7eb",borderRadius:12,padding:"1.25rem",marginBottom:"1rem"}}>
                   <div style={{fontWeight:700,color:"#111",fontSize:"0.95rem",marginBottom:"0.5rem"}}>{s.area}</div>
-                  <div style={{fontSize:"0.85rem",color:"#dc2626",marginBottom:"0.5rem"}}>⚠️ {s.issue}</div>
-                  <div style={{fontSize:"0.85rem",color:"#1d4ed8",background:"#eff6ff",padding:"0.6rem 0.8rem",borderRadius:6}}>✅ {s.fix}</div>
+                  <div style={{fontSize:"0.85rem",color:"#dc2626",marginBottom:"0.5rem"}}>Issue: {s.issue}</div>
+                  <div style={{fontSize:"0.85rem",color:"#1d4ed8",background:"#eff6ff",padding:"0.6rem 0.8rem",borderRadius:6}}>Recommendation: {s.fix}</div>
                 </div>
               ))}
             </div>
           )}
 
           {codeResult && activeTab==="readable" && (
-            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"#fff"}}>
+            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"var(--bg)"}}>
               <h2 style={{marginBottom:"1.5rem",fontSize:"1.2rem",fontWeight:700}}>Readability Improvements</h2>
               {(review.readability||[]).map((r,i)=>(
                 <div key={i} style={{border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden",marginBottom:"1.25rem"}}>
@@ -404,11 +438,11 @@ export default function ImproveMode({ onBack }) {
                     <div style={{fontSize:"0.85rem",color:"#6b7280",marginBottom:"0.75rem"}}>{r.description}</div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem"}}>
                       <div>
-                        <div style={{fontSize:"0.72rem",fontWeight:700,textTransform:"uppercase",color:"#ef4444",marginBottom:"0.4rem"}}>❌ Before</div>
+                        <div style={{fontSize:"0.72rem",fontWeight:700,textTransform:"uppercase",color:"#ef4444",marginBottom:"0.4rem"}}>Before</div>
                         <pre style={{background:"#fef2f2",color:"#991b1b",padding:"0.75rem",borderRadius:6,fontSize:"0.75rem",fontFamily:"monospace",whiteSpace:"pre-wrap"}}>{r.before}</pre>
                       </div>
                       <div>
-                        <div style={{fontSize:"0.72rem",fontWeight:700,textTransform:"uppercase",color:"#16a34a",marginBottom:"0.4rem"}}>✅ After</div>
+                        <div style={{fontSize:"0.72rem",fontWeight:700,textTransform:"uppercase",color:"#16a34a",marginBottom:"0.4rem"}}>After</div>
                         <pre style={{background:"#f0fdf4",color:"#166534",padding:"0.75rem",borderRadius:6,fontSize:"0.75rem",fontFamily:"monospace",whiteSpace:"pre-wrap"}}>{r.after}</pre>
                       </div>
                     </div>
@@ -419,15 +453,15 @@ export default function ImproveMode({ onBack }) {
           )}
 
           {codeResult && activeTab==="complexity" && (
-            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"#fff"}}>
+            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"var(--bg)"}}>
               <h2 style={{marginBottom:"1.5rem",fontSize:"1.2rem",fontWeight:700}}>High Complexity Files (Needs Refactoring)</h2>
-              <div style={{fontSize:"0.88rem",color:"#6b7280",marginBottom:"1.5rem"}}>These files have the highest cyclomatic complexity (too many if/else branches, loops, and conditions). Consider refactoring them into smaller, more focused modules.</div>
-              <div style={{border:"1px solid #e5e7eb",borderRadius:12,overflow:"hidden"}}>
+              <div style={{fontSize:"0.88rem",color:"var(--muted)",marginBottom:"1.5rem"}}>These files have the highest cyclomatic complexity (too many if/else branches, loops, and conditions). Consider refactoring them into smaller, more focused modules.</div>
+              <div style={{border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden", background: "var(--bg-card)"}}>
                 {(review.complexity||[]).map((f,i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems: "center", padding:"0.8rem 1rem",borderBottom:"1px solid #f3f4f6",fontSize:"0.85rem"}}>
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems: "center", padding:"1rem 1.25rem",borderBottom:"1px solid var(--border)",fontSize:"0.85rem"}}>
                     <div>
-                      <div style={{fontFamily:"monospace",color:"#374151", fontWeight: 600}}>{f.path}</div>
-                      <div style={{color:"#9ca3af", fontSize: "0.75rem", marginTop: "0.2rem"}}>{f.lines} lines · {f.functions} functions · {f.imports} imports</div>
+                      <div style={{fontFamily:"'JetBrains Mono', monospace",color:"var(--text)", fontWeight: 600}}>{f.path}</div>
+                      <div style={{color:"var(--muted)", fontSize: "0.75rem", marginTop: "0.3rem"}}>{f.lines} lines · {f.functions} functions · {f.imports} imports</div>
                     </div>
                     <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
                       <span style={{color: f.complexityScore > 50 ? "#ef4444" : f.complexityScore > 20 ? "#f59e0b" : "#10b981", fontWeight: 700, fontSize: "1.1rem"}}>{f.complexityScore}</span>
@@ -440,8 +474,8 @@ export default function ImproveMode({ onBack }) {
           )}
 
           {codeResult && activeTab==="archMap" && (
-            <div style={{height:"100%",position:"relative", background:"#111827"}}>
-              <div style={{position:"absolute",top:16,left:"50%",transform:"translateX(-50%)",zIndex:10,background:"rgba(22,27,34,0.95)",color:"#8b949e",padding:"6px 16px",borderRadius:20,border:"1px solid #30363d",fontSize:"0.82rem",fontWeight:500}}>
+            <div style={{height:"100%",position:"relative", background:"var(--bg)"}}>
+              <div style={{position:"absolute",top:16,left:"50%",transform:"translateX(-50%)",zIndex:10,background:"var(--bg-card)",color:"var(--text)",padding:"8px 20px",borderRadius:24,border:"1px solid var(--border)",fontSize:"0.82rem",fontWeight:500,boxShadow:"0 4px 12px rgba(0,0,0,0.1)"}}>
                 Internal Module Dependency Map
               </div>
               {review.mermaidGraph ? (
@@ -450,7 +484,9 @@ export default function ImproveMode({ onBack }) {
                 </div>
               ) : (
                 <div style={{display:"flex",height:"100%",alignItems:"center",justifyContent:"center",color:"#6b7280",flexDirection:"column"}}>
-                  <div style={{fontSize:"2rem",marginBottom:"1rem"}}>🔗</div>
+                  <div style={{marginBottom:"1rem"}}>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                  </div>
                   <div>No internal dependencies found to map.</div>
                   <div style={{fontSize:"0.8rem",marginTop:"0.5rem"}}>This typically happens if files don't import each other or use unrecognized import paths.</div>
                 </div>

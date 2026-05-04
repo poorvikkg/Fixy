@@ -63,6 +63,10 @@ export default function BuildMode({ onBack }) {
     setLoading(false);
   };
 
+  const handleDownloadPdf = () => {
+    window.print();
+  };
+
   const SL = ({children,cls}) => <div className={`section-label ${cls||""}`} style={{marginTop:"1rem"}}>{children}</div>;
 
   return (
@@ -209,7 +213,7 @@ export default function BuildMode({ onBack }) {
         </div>
         <div className="sidebar-footer">
           <button className="btn-primary" onClick={handleGenerate} disabled={loading}>
-            {loading ? "Generating..." : "⚡ Generate Architecture"}
+            {loading ? "Generating Architecture..." : "Generate Architecture"}
           </button>
         </div>
       </div>
@@ -223,10 +227,19 @@ export default function BuildMode({ onBack }) {
                 {t==="hld"?"HLD Diagram":t==="lld"?"LLD Details":t==="insights"?"Scaling & Tradeoffs":"Infrastructure (IaC)"}
               </button>
             ))}
+            <div style={{flex: 1}}></div>
+            <button id="export-pdf-btn" onClick={handleDownloadPdf} style={{
+              background: "transparent", border: "1px solid var(--border)", color: "var(--text)", 
+              padding: "0.4rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 600, 
+              cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem"
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Export PDF
+            </button>
           </div>
         )}
 
-        <div className="canvas-area">
+        <div id="pdf-export-area" className="canvas-area">
           {activeTab==="hld" && (
             <>
               {result ? (
@@ -235,10 +248,9 @@ export default function BuildMode({ onBack }) {
                   onNodeSelect={handleNodeSelect}
                 />
               ) : (
-                <div className="empty-state" style={{background:"#0d1117"}}>
-                  <div className="empty-icon">🏗️</div>
-                  <div className="empty-title" style={{color:"#e2e8f0"}}>No Architecture Yet</div>
-                  <div className="empty-desc" style={{color:"#8b949e"}}>Configure your requirements and click Generate Architecture.</div>
+                <div className="empty-state" style={{background:"var(--bg)"}}>
+                  <div className="empty-title" style={{color:"var(--text)"}}>No Architecture Generated</div>
+                  <div className="empty-desc" style={{color:"var(--muted)"}}>Configure your system requirements in the left panel and click Generate Architecture to proceed.</div>
                 </div>
               )}
               {selectedNode && (
@@ -294,7 +306,7 @@ export default function BuildMode({ onBack }) {
                         link.download = `${selectedSvc.service}.js`;
                         link.click();
                       }}>
-                        ↓ Download Scaffold
+                        Download Scaffold
                       </button>
                     </div>
                   )}
@@ -343,7 +355,7 @@ export default function BuildMode({ onBack }) {
           )}
 
           {activeTab==="insights" && result && (
-            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"#fff"}}>
+            <div style={{height:"100%",overflowY:"auto",padding:"2rem",background:"var(--bg)"}}>
               <h2 style={{marginBottom:"1.5rem",fontSize:"1.2rem",fontWeight:700}}>Scaling & Tradeoffs</h2>
               
               <CapacityCalculator form={form} />
@@ -357,9 +369,9 @@ export default function BuildMode({ onBack }) {
                     </ul>
                   </div>
                 ))}
-                <div style={{border:"1px solid #e5e7eb",borderRadius:12,padding:"1.25rem"}}>
+                <div style={{border:"1px solid var(--border)",borderRadius:"var(--radius)",padding:"1.25rem", background:"var(--bg-card)"}}>
                   <div style={{fontWeight:700,marginBottom:"0.75rem"}}>Request Pipeline</div>
-                  <div style={{fontSize:"0.78rem",color:"#374151",lineHeight:1.8,fontFamily:"monospace"}}>
+                  <div style={{fontSize:"0.78rem",color:"var(--muted)",lineHeight:1.8,fontFamily:"'JetBrains Mono', monospace"}}>
                     {result.raw.pipelines.requestPipeline.join(" →\n")}
                   </div>
                 </div>
@@ -372,10 +384,10 @@ export default function BuildMode({ onBack }) {
               )}
               <h3 style={{marginBottom:"1rem",fontWeight:700}}>Architectural Tradeoffs</h3>
               {result.raw.insights.tradeoffs.map((t,i)=>(
-                <div key={i} style={{border:"1px solid #e5e7eb",borderRadius:10,padding:"1rem 1.25rem",display:"flex",gap:"2rem",marginBottom:"0.75rem"}}>
-                  <div style={{minWidth:160,fontWeight:700,color:"#111"}}>{t.decision}</div>
-                  <div style={{color:"#16a34a",fontSize:"0.88rem"}}>✅ {t.advantage}</div>
-                  <div style={{color:"#dc2626",fontSize:"0.88rem"}}>⚠️ {t.disadvantage}</div>
+                <div key={i} style={{border:"1px solid var(--border)",borderRadius:"var(--radius)",padding:"1rem 1.25rem",display:"flex",gap:"2rem",marginBottom:"0.75rem", background:"var(--bg-card)"}}>
+                  <div style={{minWidth:160,fontWeight:700,color:"var(--text)"}}>{t.decision}</div>
+                  <div style={{color:"var(--green)",fontSize:"0.88rem"}}>Advantage: {t.advantage}</div>
+                  <div style={{color:"var(--red)",fontSize:"0.88rem"}}>Risk: {t.disadvantage}</div>
                 </div>
               ))}
             </div>

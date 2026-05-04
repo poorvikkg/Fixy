@@ -1,19 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
 :root {
-  --bg: #000000;
-  --bg-card: #0a0a0a;
-  --bg-panel: #0a0a0a;
-  --accent: #3b82f6;
+  --bg: #0d0d0f;
+  --bg-card: #16161a;
+  --bg-panel: #121214;
+  --accent: #6366f1;
   --accent2: #8b5cf6;
   --green: #10b981;
   --orange: #f59e0b;
   --red: #ef4444;
-  --text: #ededed;
-  --muted: #a1a1aa;
+  --text: #f8fafc;
+  --muted: #9ca3af;
   --border: #27272a;
-  --glow: rgba(255,255,255,0.05);
-  --radius: 12px;
+  --glow: rgba(99, 102, 241, 0.15);
+  --radius: 16px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -88,21 +88,22 @@ body {
 
 .feature-card {
   flex: 1;
-  background: #0a0a0a;
-  border: 1px solid #27272a;
-  border-radius: 12px;
-  padding: 2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .feature-card:hover {
-  background: #121212;
+  transform: translateY(-4px);
+  background: #1a1a1e;
   border-color: #3f3f46;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
 }
 
 .feature-card-header {
@@ -246,20 +247,20 @@ body {
 }
 
 .input-g {
-  background: #000000;
+  background: rgba(255,255,255,0.03);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 14px;
+  border-radius: 10px;
+  padding: 12px 14px;
   color: var(--text);
   font-family: 'Outfit', sans-serif;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   outline: none;
   transition: all 0.2s;
   width: 100%;
 }
 
-.input-g:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
-.input-g option { background: #000; }
+.input-g:focus { background: rgba(255,255,255,0.06); border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
+.input-g option { background: var(--bg-card); }
 
 textarea.input-g { resize: vertical; min-height: 100px; line-height: 1.6; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
 
@@ -452,4 +453,90 @@ textarea.input-g { resize: vertical; min-height: 100px; line-height: 1.6; font-f
 @keyframes panelIn {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================================================
+   PRINT STYLES (For PDF Export)
+   ========================================================================= */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  
+  /* Hide UI elements not meant for PDF */
+  .sidebar,
+  .main-toolbar,
+  .back-btn,
+  #export-pdf-btn,
+  .lld-close,
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Expand main area to full width */
+  .app {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+  
+  .main {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .canvas-area {
+    width: 100%;
+    /* Keep a minimum height so ReactFlow doesn't collapse to 0 */
+    min-height: 11in; 
+    height: auto;
+    overflow: visible;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* Force ReactFlow container to take up page space */
+  .react-flow, .react-flow__renderer {
+    height: 800px !important;
+  }
+
+  .canvas-area > div {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Avoid breaking inside cards */
+  .canvas-area > div > div {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border-color: #ddd !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  h2, h3, .toolbar-title {
+    color: #000 !important;
+  }
+
+  /* Handle Mermaid Charts specifically for print */
+  .mermaid-container {
+    background: #fff !important;
+    border-color: #ddd !important;
+    color: #000 !important;
+    overflow: visible !important;
+    page-break-inside: avoid;
+  }
+  
+  .mermaid-container svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
