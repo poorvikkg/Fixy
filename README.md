@@ -1,4 +1,4 @@
-﻿# Fixy
+﻿# Circuit Fixer
 
 ## Problem
 
