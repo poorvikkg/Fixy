@@ -3,7 +3,6 @@ import ArchitectureDiagram from "./ArchitectureDiagram";
 import DependencyMap from "./DependencyMap";
 
 const API_BASE = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "");
-const API_BASE = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "");
 
 export default function ImproveMode({ onBack }) {
   const [section, setSection] = useState("hld"); // "hld" or "lld"

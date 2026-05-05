@@ -5,6 +5,8 @@ import mermaid from "mermaid";
 
 mermaid.initialize({ startOnLoad: false, theme: 'dark' });
 
+const API_BASE = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "");
+
 const MermaidChart = ({ chart }) => {
   const [svgContent, setSvgContent] = useState("");
   const [error, setError] = useState("");
@@ -65,7 +67,7 @@ export default function BuildMode({ onBack }) {
   const handleGenerate = async () => {
     setLoading(true); setResult(null); setSelectedNode(null); setLldData(null);
     try {
-      const res = await fetch("http://localhost:5000/api/generate", {
+      const res = await fetch(`${API_BASE}/api/generate`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, users: Number(form.users) })
       });
