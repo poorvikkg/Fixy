@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ArchitectureDiagram from "./ArchitectureDiagram";
 import DependencyMap from "./DependencyMap";
 
-const API_BASE = window.location.hostname === "localhost" ? "http://localhost:5000" : "";
+const API_BASE = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "");
 const SEV_COLOR = { critical:"#ef4444", high:"#f59e0b", medium:"#3b82f6", info:"#10b981" };
 
 export default function ImproveMode({ onBack }) {

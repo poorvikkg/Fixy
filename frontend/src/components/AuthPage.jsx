@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const API_BASE = window.location.hostname === "localhost" ? "http://localhost:5000" : "";
+const API_BASE = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "");
 const API = `${API_BASE}/api/auth`;
 
 export default function AuthPage({ onAuthenticated }) {
