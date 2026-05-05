@@ -10,8 +10,9 @@ const NODE_W     = 220;
 const NODE_H     = 70;    
 const COL_GAP    = 100;   
 const ROW_H      = 180;   
-const START_X    = 50;   
 const START_Y    = 50;   
+
+const VIBRANT_PALETTE = ["#6366f1", "#8b5cf6", "#f59e0b", "#10b981", "#f43f5e", "#06b6d4", "#f97316", "#d946ef"];
 
 const LAYER_COLORS = {
   routes:      { border: "#6366f1", glow: "#6366f1", icon: "🌐", badge: "ROUTE" },
@@ -170,8 +171,6 @@ function DependencyContent({ dependencyData }) {
   const [edges, setEdges] = useState([]);
   const [hoveredEdge, setHoveredEdge] = useState(null);
   const { fitView } = useReactFlow();
-
-  const VIBRANT_PALETTE = ["#6366f1", "#8b5cf6", "#f59e0b", "#10b981", "#f43f5e", "#06b6d4", "#f97316", "#d946ef"];
 
   const isFirstRender = useRef(true);
 

@@ -3,7 +3,7 @@ import ArchitectureDiagram from "./ArchitectureDiagram";
 import DependencyMap from "./DependencyMap";
 
 const API_BASE = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "");
-const SEV_COLOR = { critical:"#ef4444", high:"#f59e0b", medium:"#3b82f6", info:"#10b981" };
+const API_BASE = process.env.REACT_APP_API_URL || (window.location.hostname === "localhost" ? "http://localhost:5000" : "");
 
 export default function ImproveMode({ onBack }) {
   const [section, setSection] = useState("hld"); // "hld" or "lld"
@@ -12,7 +12,6 @@ export default function ImproveMode({ onBack }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // HLD state
-  const [hldFile, setHldFile] = useState(null);
   const [hldResult, setHldResult] = useState(null);
   const mapRef = useRef(null);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
@@ -43,64 +42,6 @@ export default function ImproveMode({ onBack }) {
   const [githubToken, setGithubToken] = useState("");
   const [codeResult, setCodeResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
-
-  const setHld = (k,v) => setHldForm(p => ({...p,[k]:v}));
-  const fileRef = useRef(null);
-
-  // ── HLD File Upload ──
-  const handleFileUpload = async () => {
-    if (!hldFile) return;
-    setLoading(true); setHldResult(null); setHldErrorMessage("");
-    const fd = new FormData();
-    fd.append("hldFile", hldFile);
-    fd.append("improvementsWanted", hldForm.improvementsWanted);
-    fd.append("currentScale", hldForm.currentScale);
-    fd.append("techStack", hldForm.techStack);
-    fd.append("existingHLD", hldForm.existingHLD);
-    try {
-      const res = await fetch(`${API_BASE}/api/hld-analyze`, {
-        method: "POST",
-        credentials: "include",
-        body: fd
-      });
-      const data = await res.json();
-      if (data.status === "success") {
-        setHldResult(data);
-        setActiveTab("issues");
-      } else {
-        setHldErrorMessage(data.message || "Analysis failed. Please try again.");
-      }
-    } catch (e) {
-      console.error(e);
-      setHldErrorMessage("Could not connect to server. Is the backend running?");
-    }
-    setLoading(false);
-  };
-
-  // ── HLD Text-only Analysis ──
-  const handleTextAnalyze = async () => {
-    if (hldForm.existingHLD.length < 10) return;
-    setLoading(true); setHldResult(null); setHldErrorMessage("");
-    try {
-      const res = await fetch(`${API_BASE}/api/improve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(hldForm)
-      });
-      const data = await res.json();
-      if (data.status === "success") {
-        setHldResult(data);
-        setActiveTab("issues");
-      } else {
-        setHldErrorMessage(data.message || "Analysis failed. Please try again.");
-      }
-    } catch (e) {
-      console.error(e);
-      setHldErrorMessage("Could not connect to server. Is the backend running?");
-    }
-    setLoading(false);
-  };
 
   // ── Code Review ──
   const handleCodeReview = async () => {
